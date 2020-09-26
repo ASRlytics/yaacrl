@@ -36,16 +36,79 @@ bool is_local_maximum(Spectrogram& spec, int window, int bin) {
 }
 
 std::vector<Peak> find_peaks(Spectrogram& spec) {
-    std::vector<Peak> peaks;
-
-    for (int window = 0; window < spec.size(); window++) {
-        for (int bin = 0; bin < BINS_AMOUNT; bin++) {
-            float value = spec[window][bin];
-            if (value < MIN_AMPLITUDE || value == 0.0) {
+    std::vector<bool*> bitmap;
+    for (int i = 0; i < spec.size(); i++) {
+        bool* new_array = new bool[BINS_AMOUNT];
+        std::fill_n(new_array, BINS_AMOUNT, false);
+        bitmap.push_back(new_array);
+    }
+    
+    int cur_max_i;
+    int cur_max;
+    
+    // Iterate all windows of single bin
+    for (int bin = 0; bin < BINS_AMOUNT; bin++) {
+        cur_max_i = 0;
+        cur_max = spec[0][bin];
+        bitmap[0][bin] = (cur_max >= MIN_AMPLITUDE);
+        for (int window = 0; window < spec.size(); window++) {
+            auto& value = spec[window][bin];
+            if ((window - cur_max_i) >= LOC_WINDOWS) {
+                cur_max_i = window;
+                cur_max = value;
+                bitmap[window][bin] = (cur_max >= MIN_AMPLITUDE);
                 continue;
             }
-            
-            if (is_local_maximum(spec, window, bin) ) {
+            if (value < MIN_AMPLITUDE) continue;
+
+            if (cur_max == value) {
+                // Uncheck old max, but do not check new max
+                bitmap[cur_max_i][bin] = false;
+                cur_max_i = window;
+            }
+            if (cur_max < value) {
+                bitmap[cur_max_i][bin] = false;
+                cur_max_i = window;
+                cur_max = value;
+                bitmap[window][bin] = true;
+            }
+        }
+    }
+
+    // Iterate all bins of a single window of single bin
+    for (int window = 0; window < spec.size(); window++) {
+        cur_max_i = 0;
+        cur_max = spec[window][0];
+        bitmap[window][0] = bitmap[window][0] && (cur_max >= MIN_AMPLITUDE);
+        for (int bin = 0; bin < BINS_AMOUNT; bin++) {
+            auto& value = spec[window][bin];
+            if ((bin - cur_max_i) >= LOC_BINS) {
+                cur_max_i = bin;
+                cur_max = value;
+                bitmap[window][bin] = bitmap[window][bin] && (cur_max >= MIN_AMPLITUDE);
+                continue;
+            }
+            if (value < MIN_AMPLITUDE) continue;
+            if (!bitmap[window][bin]) continue;
+
+            if (cur_max == value) {
+                // Uncheck old max, but do not check new max
+                bitmap[bin][cur_max_i] = false;
+                cur_max_i = window;
+            }
+            if (cur_max < value) {
+                bitmap[window][cur_max_i] = false;
+                cur_max_i = bin;
+                cur_max = value;
+                bitmap[window][bin] = true;
+            }
+        }
+    }
+
+    std::vector<Peak> peaks;
+    for (int window = 0; window < spec.size(); window++) {
+        for (int bin = 0; bin < BINS_AMOUNT; bin++) {
+            if (bitmap[window][bin]) {
                 peaks.emplace_back(window, bin);
             }
         }

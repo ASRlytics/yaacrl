@@ -37,6 +37,7 @@ int main() {
         storage.store_fingerprint(fprint);
         std::cout << "  -> fingeprint saved" << std::endl;
     }
+    return 0;
 
     std::cout << "### Test fragments" << std::endl;
     for (auto& item: test_fragments) {

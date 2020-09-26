@@ -3,6 +3,7 @@ project(yaacrl VERSION 0.1.0)
 
 # std::filesystem from C++17 is used
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE Debug)
 
 
 include_directories(PUBLIC ${PROJECT_SOURCE_DIR}/src)
