@@ -43,7 +43,7 @@ int main() {
     for (auto& item: test_fragments) {
         std::cout << "Check " << item.filename() << std::endl;
         auto fprint = Fingerprint::fromWAV(item);
-        std::cout << "  -> " << fprint.hashes.size() << " hashes detected" << std::endl;
+        std::cout << "  -> " << fprint.spec.size() << " hashes detected" << std::endl;
         auto matches = storage.get_matches(fprint);
         std::cout << "  -> " << matches.size() << " matches found" << std::endl;
     }
